@@ -1,0 +1,8 @@
+[package]
+name = "git-foreach"
+description = "Run a command in each git repository in a directory"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+ignore = "0.4.22"
