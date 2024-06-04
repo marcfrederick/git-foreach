@@ -3,14 +3,20 @@ name = "git-foreach"
 description = "Run a command in each git repository in a directory"
 version = "0.1.0"
 edition = "2021"
+repository = "https://github.com/marcfrederick/git-foreach"
 
-[profile.release]
-strip = true
-opt-level = "z"
-codegen-units = 1
-panic = "abort"
-lto = true
+[profile.dist]
+inherits = "release"
+lto = "thin"
 
 [dependencies]
 clap = { version = "4.5.4", features = ["derive", "cargo"] }
 ignore = "0.4.22"
+
+[workspace.metadata.dist]
+cargo-dist-version = "0.15.1"
+ci = "github"
+targets = ["aarch64-apple-darwin", "x86_64-apple-darwin", "x86_64-unknown-linux-gnu", "x86_64-unknown-linux-musl", "x86_64-pc-windows-msvc"]
+pr-run-mode = "plan"
+install-updater = false
+installers = ["shell"]
