@@ -1,8 +1,10 @@
 [package]
 name = "git-foreach"
 description = "Run a command in each git repository in a directory"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
+license = "MIT"
+homepage = "https://github.com/marcfrederick/git-foreach"
 repository = "https://github.com/marcfrederick/git-foreach"
 
 [profile.dist]
@@ -19,4 +21,6 @@ ci = "github"
 targets = ["aarch64-apple-darwin", "x86_64-apple-darwin", "x86_64-unknown-linux-gnu", "x86_64-unknown-linux-musl", "x86_64-pc-windows-msvc"]
 pr-run-mode = "plan"
 install-updater = false
-installers = ["shell"]
+installers = ["shell", "powershell", "homebrew"]
+tap = "marcfrederick/homebrew-tap"
+publish-jobs = ["homebrew"]
