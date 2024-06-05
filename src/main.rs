@@ -90,30 +90,27 @@ fn run_command_in_directory(options: &Options, path: &PathBuf) -> Result<(), Err
         println!("Entering '{}'", path.display());
     }
 
-    let shell_binary = if cfg!(target_os = "windows") {
-        "cmd"
+    let (shell_binary, shell_arg) = if cfg!(target_os = "windows") {
+        ("cmd", "/C")
     } else {
-        "/bin/sh"
-    };
-
-    let shell_arg = if cfg!(target_os = "windows") {
-        "/C".to_string()
-    } else {
-        "-c".to_string()
+        ("/bin/sh", "-c")
     };
 
     let shell_command = options.command.join(" ");
 
     if options.dry_run {
         println!(
-            "dry-run: would run '{shell_binary} {shell_arg} \"{shell_command}\"' in '{}'",
+            "dry-run: would run '{} {} \"{}\"' in '{}'",
+            shell_binary,
+            shell_arg,
+            shell_command,
             path.display()
         );
         return Ok(());
     }
 
     let status = std::process::Command::new(shell_binary)
-        .args([shell_arg, shell_command])
+        .args([shell_arg, &shell_command])
         .current_dir(path)
         .status();
 
