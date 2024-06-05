@@ -1,16 +1,30 @@
 # git-foreach
 
-`git-foreach` is a lightweight utility designed to execute a command in each Git repository within a directory and its
+git-foreach is a lightweight utility designed to execute a command in each Git repository within a directory and its
 subdirectories. It's particularly useful for performing bulk operations, such as `git pull` or `git status`, across
 multiple repositories simultaneously.
 
 ## Usage
 
-The specified `<command>` will be executed in each Git repository found in the current directory and all its
-subdirectories.
+To use `git-foreach`, simply prepend your desired command with `git-foreach`. The command will be executed in each Git
+repository found in the current directory and all its subdirectories.
 
 ```shell
 git-foreach <command>
+```
+
+For instance, if you want to execute git pull in each repository, you would use:
+
+```shell
+git-foreach "git pull"
+```
+
+By default, git-foreach will stop executing if the command fails in one of the repositories. If you want the execution
+to continue despite failures, you can append `|| :` to the command. This will mask the error and allows git-foreach to
+continue processing the remaining repositories.
+
+```shell
+git-foreach "git pull || :"
 ```
 
 ## Installation

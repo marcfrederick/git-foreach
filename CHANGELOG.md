@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-Nothing Yet!
+- Process repositories in parallel
 
 ## Version 0.1.1
 

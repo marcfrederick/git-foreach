@@ -5,7 +5,8 @@ use std::env;
 use std::path::PathBuf;
 
 use clap::Parser;
-use ignore::Walk;
+use ignore::{DirEntry, Walk};
+use rayon::prelude::*;
 
 use crate::error::Error;
 
@@ -41,12 +42,10 @@ fn main() {
 /// subdirectories.
 fn repository_foreach<T: Iterator<Item = String>>(args: T) -> Result<(), Error> {
     let options = parse_options(args)?;
-
-    for repository in find_repositories(&options.directory)? {
-        run_command_in_directory(&options, &repository)?;
-    }
-
-    Ok(())
+    find_repositories(&options.directory)
+        .par_iter()
+        .map(|repository| run_command_in_directory(&options, repository))
+        .collect()
 }
 
 /// Parse the command line options.
@@ -55,17 +54,11 @@ fn parse_options<T: Iterator<Item = String>>(args: T) -> Result<Options, Error> 
 }
 
 /// Find all git repositories in a directory and its subdirectories.
-fn find_repositories(path: &PathBuf) -> Result<HashSet<PathBuf>, Error> {
+fn find_repositories(path: &PathBuf) -> HashSet<PathBuf> {
     Walk::new(path)
-        .filter_map(|entry| {
-            let entry = entry.ok()?;
-            let path = entry.path();
-            if path.is_dir() && path.join(".git").exists() {
-                Some(Ok(path.to_path_buf()))
-            } else {
-                None
-            }
-        })
+        .flatten()
+        .map(DirEntry::into_path)
+        .filter(|path| path.is_dir() && path.join(".git").exists())
         .collect()
 }
 
