@@ -33,6 +33,14 @@ Pre-built binaries are available for Windows, Linux, and macOS. You can download
 the [releases page](https://github.com/marcfrederick/git-foreach/releases) and add them to your `$PATH`. The release
 page also includes instructions for installation using [Homebrew](https://brew.sh), `curl`, or PowerShell.
 
+### Homebrew
+
+If you're using macOS or Linux, you can install `git-foreach` using [Homebrew](https://brew.sh):
+
+```shell
+brew install marcfrederick/homebrew-tap/git-foreach
+```
+
 ## Building from Source
 
 To build the utility from source, ensure you have [Rust](https://www.rust-lang.org) installed on your system. Then,
