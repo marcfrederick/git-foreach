@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
-- Nothing yet!
+- Introduced `--dry-run` flag to simulate the execution of the command without actually running it.
 
 ## Version 0.2.0 - 2024-06-05
 

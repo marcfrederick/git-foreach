@@ -12,6 +12,7 @@ use crate::error::Error;
 
 mod error;
 
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Parser)]
 #[clap(version, about)]
 struct Options {
@@ -38,6 +39,9 @@ struct Options {
         help = "When set, ignore files such as .gitignore will not be respected."
     )]
     no_ignore: bool,
+
+    #[arg(long, help = "Dry run. Do not execute the command.")]
+    dry_run: bool,
 
     #[arg(trailing_var_arg = true, required = true)]
     command: Vec<String>,
@@ -96,6 +100,14 @@ fn run_command_in_directory(options: &Options, path: &PathBuf) -> Result<(), Err
     };
 
     let shell_command = options.command.join(" ");
+
+    if options.dry_run {
+        println!(
+            "dry-run: would run '{shell_binary} {shell_arg} \"{shell_command}\"' in '{}'",
+            path.display()
+        );
+        return Ok(());
+    }
 
     let status = std::process::Command::new(shell_binary)
         .args([shell_arg, shell_command])
