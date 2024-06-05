@@ -55,7 +55,10 @@ fn main() {
 /// subdirectories.
 fn repository_foreach<T: Iterator<Item = String>>(args: T) -> Result<(), Error> {
     let options = parse_options(args)?;
-    dbg!(&options);
+    if cfg!(debug_assertions) {
+        dbg!(&options);
+    }
+
     find_repositories(&options)
         .par_iter()
         .map(|repository| run_command_in_directory(&options, repository))
