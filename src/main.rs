@@ -5,7 +5,7 @@ use std::env;
 use std::path::PathBuf;
 
 use clap::Parser;
-use ignore::{DirEntry, Walk};
+use ignore::{DirEntry, WalkBuilder};
 use rayon::prelude::*;
 
 use crate::error::Error;
@@ -30,6 +30,15 @@ struct Options {
     )]
     directory: PathBuf,
 
+    #[arg(long, help = "Search hidden files and directories.")]
+    hidden: bool,
+
+    #[arg(
+        long,
+        help = "When set, ignore files such as .gitignore will not be respected."
+    )]
+    no_ignore: bool,
+
     #[arg(trailing_var_arg = true, required = true)]
     command: Vec<String>,
 }
@@ -42,7 +51,8 @@ fn main() {
 /// subdirectories.
 fn repository_foreach<T: Iterator<Item = String>>(args: T) -> Result<(), Error> {
     let options = parse_options(args)?;
-    find_repositories(&options.directory)
+    dbg!(&options);
+    find_repositories(&options)
         .par_iter()
         .map(|repository| run_command_in_directory(&options, repository))
         .collect()
@@ -54,9 +64,14 @@ fn parse_options<T: Iterator<Item = String>>(args: T) -> Result<Options, Error> 
 }
 
 /// Find all git repositories in a directory and its subdirectories.
-fn find_repositories(path: &PathBuf) -> HashSet<PathBuf> {
-    Walk::new(path)
-        .flatten()
+fn find_repositories(options: &Options) -> HashSet<PathBuf> {
+    let walk = WalkBuilder::new(&options.directory)
+        .hidden(options.hidden)
+        .ignore(!options.no_ignore)
+        .git_ignore(!options.no_ignore)
+        .build();
+
+    walk.flatten()
         .map(DirEntry::into_path)
         .filter(|path| path.is_dir() && path.join(".git").exists())
         .collect()
