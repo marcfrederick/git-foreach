@@ -73,7 +73,7 @@ fn parse_options<T: Iterator<Item = String>>(args: T) -> Result<Options, Error> 
 /// Find all git repositories in a directory and its subdirectories.
 fn find_repositories(options: &Options) -> HashSet<PathBuf> {
     let walk = WalkBuilder::new(&options.directory)
-        .hidden(options.hidden)
+        .hidden(!options.hidden)
         .ignore(!options.no_ignore)
         .git_ignore(!options.no_ignore)
         .build();
