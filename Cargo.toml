@@ -1,7 +1,7 @@
 [package]
 name = "git-foreach"
 description = "Run a command in each git repository in a directory"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 license-file = "LICENSE"
 homepage = "https://github.com/marcfrederick/git-foreach"
