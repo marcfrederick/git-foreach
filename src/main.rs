@@ -128,28 +128,47 @@ fn run_command_in_directory(options: &Options, path: &PathBuf) -> Result<(), Err
 mod test {
     use super::*;
 
-    #[test]
-    fn test_parse_options() {
-        let args = ["repository-foreach", "--quiet", "echo", "foo"]
-            .iter()
-            .map(ToString::to_string);
-
-        let options = parse_options(args).expect("Failed to parse options");
-
-        assert!(options.quiet);
-        assert_eq!(options.command, vec!["echo".to_string(), "foo".to_string()]);
-    }
-
-    #[test]
-    fn test_parse_options_missing_command() {
-        let args = ["repository-foreach"].iter().map(ToString::to_string);
-
-        let error = parse_options(args);
-
-        match error {
-            Ok(_) => panic!("Expected an error"),
-            Err(Error::InvalidUsage { .. }) => {}
-            Err(err) => panic!("Unexpected error: {err}"),
+    macro_rules! parse_options_tests {
+        ($($name:ident: $args:expr => $foo:expr,)*) => {
+        $(
+            #[test]
+            fn $name() {
+                let args = $args.iter().map(ToString::to_string);
+                let result = parse_options(args);
+                $foo(result);
+            }
+        )*
         }
     }
+
+    parse_options_tests!(
+        parse_options_empty: [] as [&str; 0] => |result: Result<_, _>| assert!(matches!(result, Err(Error::InvalidUsage { .. }))),
+        parse_options_help: ["git-foreach", "--help"] => |result: Result<_, _>| assert!(matches!(result, Err(Error::InvalidUsage { .. }))),
+        parse_options_version: ["git-foreach", "--version"] => |result: Result<_, _>| assert!(matches!(result, Err(Error::InvalidUsage { .. }))),
+        parse_options_invalid: ["git-foreach", "--invalid"] => |result: Result<_, _>| assert!(matches!(result, Err(Error::InvalidUsage { .. }))),
+        parse_options_valid: ["git-foreach", "echo", "hello"] => |result: Result<Options, _>| {
+            match result {
+                Ok(options) => assert_eq!(options.command, vec!["echo".to_string(), "hello".to_string()]),
+                Err(_) => panic!("Expected Ok(_)"),
+            }
+        },
+        parse_options_dry_run: ["git-foreach", "--dry-run", "echo", "hello"] => |result: Result<Options, _>| {
+            match result {
+                Ok(options) => {
+                    assert_eq!(options.dry_run, true);
+                    assert_eq!(options.command, vec!["echo".to_string(), "hello".to_string()]);
+                },
+                Err(_) => panic!("Expected Ok(_)"),
+            }
+        },
+        parse_options_quiet: ["git-foreach", "--quiet", "echo", "hello"] => |result: Result<Options, _>| {
+            match result {
+                Ok(options) => {
+                    assert_eq!(options.quiet, true);
+                    assert_eq!(options.command, vec!["echo".to_string(), "hello".to_string()]);
+                },
+                Err(_) => panic!("Expected Ok(_)"),
+            }
+        },
+    );
 }
