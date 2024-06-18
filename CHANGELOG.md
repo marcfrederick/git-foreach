@@ -4,7 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
-- Nothing yet!
+### Added
+
+- Process directories as they are found, instead of waiting for the search to complete.
 
 ## Version 0.3.0 - 2024-06-05
 

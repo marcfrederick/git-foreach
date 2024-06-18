@@ -1,11 +1,10 @@
 #![deny(clippy::pedantic)]
 
-use std::collections::HashSet;
 use std::env;
 use std::path::PathBuf;
 
 use clap::Parser;
-use ignore::{DirEntry, WalkBuilder};
+use ignore::{DirEntry, Walk, WalkBuilder};
 use rayon::prelude::*;
 
 use crate::error::Error;
@@ -59,10 +58,12 @@ fn repository_foreach<T: Iterator<Item = String>>(args: T) -> Result<(), Error> 
         dbg!(&options);
     }
 
-    find_repositories(&options)
-        .par_iter()
-        .map(|repository| run_command_in_directory(&options, repository))
-        .collect()
+    walk_from_options(&options)
+        .flatten()
+        .par_bridge()
+        .map(DirEntry::into_path)
+        .filter(|path| path.is_dir() && path.join(".git").exists())
+        .try_for_each(|repository| run_command_in_directory(&options, &repository))
 }
 
 /// Parse the command line options.
@@ -70,18 +71,13 @@ fn parse_options<T: Iterator<Item = String>>(args: T) -> Result<Options, Error> 
     Options::try_parse_from(args).map_err(|err| Error::InvalidUsage { source: err })
 }
 
-/// Find all git repositories in a directory and its subdirectories.
-fn find_repositories(options: &Options) -> HashSet<PathBuf> {
-    let walk = WalkBuilder::new(&options.directory)
+/// Initialize the directory walker from the options.
+fn walk_from_options(options: &Options) -> Walk {
+    WalkBuilder::new(&options.directory)
         .hidden(!options.hidden)
         .ignore(!options.no_ignore)
         .git_ignore(!options.no_ignore)
-        .build();
-
-    walk.flatten()
-        .map(DirEntry::into_path)
-        .filter(|path| path.is_dir() && path.join(".git").exists())
-        .collect()
+        .build()
 }
 
 /// Run a command in a directory.
