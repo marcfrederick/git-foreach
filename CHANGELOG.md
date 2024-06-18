@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+## Version 0.4.0 - 2024-06-19
+
 ### Added
 
 - Process directories as they are found, instead of waiting for the search to complete.
