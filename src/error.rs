@@ -1,5 +1,7 @@
 use std::path::PathBuf;
 
+use crate::walk;
+
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("run_command failed for {path}")]
@@ -7,6 +9,9 @@ pub enum Error {
 
     #[error("run_command failed with non-zero exit code for {path}")]
     CommandExecutionFailedWithNonZeroExitCode { path: PathBuf, exit_code: i32 },
+
+    #[error("error walking directory: {0}")]
+    Walk(#[from] walk::Error),
 
     #[error("{0}")]
     InvalidUsage(#[from] clap::Error),
@@ -18,7 +23,7 @@ impl Error {
         match self {
             Error::CommandExecutionFailedWithNonZeroExitCode { exit_code, .. } => *exit_code,
             Error::InvalidUsage(source) => source.exit_code(),
-            Error::CommandExecutionFailed { .. } => 1,
+            _ => 1,
         }
     }
 
