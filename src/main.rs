@@ -68,7 +68,7 @@ fn repository_foreach<T: Iterator<Item = String>>(args: T) -> Result<(), Error> 
 
 /// Parse the command line options.
 fn parse_options<T: Iterator<Item = String>>(args: T) -> Result<Options, Error> {
-    Options::try_parse_from(args).map_err(|err| Error::InvalidUsage { source: err })
+    Options::try_parse_from(args).map_err(Error::from)
 }
 
 /// Initialize the directory walker from the options.
@@ -143,28 +143,18 @@ mod test {
         parse_options_version: ["git-foreach", "--version"] => |result: Result<_, _>| assert!(matches!(result, Err(Error::InvalidUsage { .. }))),
         parse_options_invalid: ["git-foreach", "--invalid"] => |result: Result<_, _>| assert!(matches!(result, Err(Error::InvalidUsage { .. }))),
         parse_options_valid: ["git-foreach", "echo", "hello"] => |result: Result<Options, _>| {
-            match result {
-                Ok(options) => assert_eq!(options.command, vec!["echo".to_string(), "hello".to_string()]),
-                Err(_) => panic!("Expected Ok(_)"),
-            }
+            let options = result.expect("Expected Ok(_)");
+            assert_eq!(options.command, vec!["echo".to_string(), "hello".to_string()]);
         },
         parse_options_dry_run: ["git-foreach", "--dry-run", "echo", "hello"] => |result: Result<Options, _>| {
-            match result {
-                Ok(options) => {
-                    assert_eq!(options.dry_run, true);
-                    assert_eq!(options.command, vec!["echo".to_string(), "hello".to_string()]);
-                },
-                Err(_) => panic!("Expected Ok(_)"),
-            }
+            let options = result.expect("Expected Ok(_)");
+            assert_eq!(options.dry_run, true);
+            assert_eq!(options.command, vec!["echo".to_string(), "hello".to_string()]);
         },
         parse_options_quiet: ["git-foreach", "--quiet", "echo", "hello"] => |result: Result<Options, _>| {
-            match result {
-                Ok(options) => {
-                    assert_eq!(options.quiet, true);
-                    assert_eq!(options.command, vec!["echo".to_string(), "hello".to_string()]);
-                },
-                Err(_) => panic!("Expected Ok(_)"),
-            }
+            let options = result.expect("Expected Ok(_)");
+            assert_eq!(options.quiet, true);
+            assert_eq!(options.command, vec!["echo".to_string(), "hello".to_string()]);
         },
     );
 }

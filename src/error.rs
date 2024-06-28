@@ -1,30 +1,15 @@
 use std::path::PathBuf;
 
-#[derive(Debug)]
+#[derive(Debug, thiserror::Error)]
 pub enum Error {
+    #[error("run_command failed for {path}")]
     CommandExecutionFailed { path: PathBuf },
+
+    #[error("run_command failed with non-zero exit code for {path}")]
     CommandExecutionFailedWithNonZeroExitCode { path: PathBuf, exit_code: i32 },
-    InvalidUsage { source: clap::Error },
-}
 
-impl std::error::Error for Error {}
-
-impl std::fmt::Display for Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self {
-            Error::InvalidUsage { source } => write!(f, "{}", source.render()),
-            Error::CommandExecutionFailed { path } => {
-                write!(f, "run_command failed for {}", path.display())
-            }
-            Error::CommandExecutionFailedWithNonZeroExitCode { path, .. } => {
-                write!(
-                    f,
-                    "run_command failed with non-zero exit code for {}",
-                    path.display()
-                )
-            }
-        }
-    }
+    #[error("{0}")]
+    InvalidUsage(#[from] clap::Error),
 }
 
 impl Error {
@@ -32,7 +17,7 @@ impl Error {
     fn get_exit_code(&self) -> i32 {
         match self {
             Error::CommandExecutionFailedWithNonZeroExitCode { exit_code, .. } => *exit_code,
-            Error::InvalidUsage { source } => source.exit_code(),
+            Error::InvalidUsage(source) => source.exit_code(),
             Error::CommandExecutionFailed { .. } => 1,
         }
     }
