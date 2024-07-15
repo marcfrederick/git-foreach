@@ -15,7 +15,7 @@ lto = "thin"
 clap = { version = "4.5.8", features = ["derive", "cargo"] }
 ignore = "0.4.22"
 rayon = "1.10.0"
-thiserror = "1.0.61"
+thiserror = "1.0.62"
 
 # Config for 'cargo dist'
 [workspace.metadata.dist]
