@@ -9,4 +9,4 @@ repository = "https://github.com/marcfrederick/git-foreach"
 
 [dependencies]
 ignore = "0.4.22"
-thiserror = "1.0.62"
+thiserror = "1.0.63"
