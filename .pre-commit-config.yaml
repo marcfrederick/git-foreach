@@ -1,0 +1,29 @@
+repos:
+  - repo: local
+    hooks:
+      - id: fmt
+        name: fmt
+        language: system
+        files: '\.rs$'
+        entry: cargo fmt -- --check
+      - id: clippy
+        name: clippy
+        language: system
+        files: '\.rs$'
+        entry: cargo clippy --all-targets --all -- -D warnings
+        pass_filenames: false
+      - id: test
+        name: test
+        language: system
+        files: '\.rs$'
+        entry: cargo test
+        pass_filenames: false
+  - repo: https://github.com/EmbarkStudios/cargo-deny
+    rev: 0.14.24
+    hooks:
+      - id: cargo-deny
+        args: ["--all-features", "check"]
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.4
+    hooks:
+      - id: gitleaks

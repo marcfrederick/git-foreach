@@ -143,12 +143,12 @@ mod test {
         },
         parse_options_dry_run: ["git-foreach", "--dry-run", "echo", "hello"] => |result: Result<Options, _>| {
             let options = result.expect("Expected Ok(_)");
-            assert_eq!(options.dry_run, true);
+            assert!(options.dry_run);
             assert_eq!(options.command, vec!["echo".to_string(), "hello".to_string()]);
         },
         parse_options_quiet: ["git-foreach", "--quiet", "echo", "hello"] => |result: Result<Options, _>| {
             let options = result.expect("Expected Ok(_)");
-            assert_eq!(options.quiet, true);
+            assert!(options.quiet);
             assert_eq!(options.command, vec!["echo".to_string(), "hello".to_string()]);
         },
     );
