@@ -3,7 +3,7 @@ name = "git-foreach"
 description = "Run a command in each git repository in a directory"
 version = "0.4.0"
 edition = "2021"
-license = "MIT"
+license = "MIT OR Apache-2.0"
 homepage = "https://github.com/marcfrederick/git-foreach"
 repository = "https://github.com/marcfrederick/git-foreach"
 
