@@ -1,3 +1,4 @@
+#![forbid(unsafe_code)]
 #![deny(clippy::pedantic)]
 
 use std::env;
@@ -6,12 +7,11 @@ use std::path::PathBuf;
 use clap::Parser;
 use rayon::prelude::*;
 
-use walk::Walk;
+use git_walk::WalkBuilder;
 
 use crate::error::Error;
 
 mod error;
-mod walk;
 
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Parser)]
@@ -60,7 +60,10 @@ fn repository_foreach<T: Iterator<Item = String>>(args: T) -> Result<(), Error> 
         dbg!(&options);
     }
 
-    Walk::new(&options.directory, !options.hidden, !options.no_ignore)
+    WalkBuilder::new(&options.directory)
+        .hidden(options.hidden)
+        .ignore(!options.no_ignore)
+        .build()
         .par_bridge()
         .flatten()
         .filter(|path| path.is_dir() && path.join(".git").exists())

@@ -152,16 +152,8 @@ name = "git-foreach"
 version = "0.4.0"
 dependencies = [
  "clap",
- "git-walk",
- "rayon",
- "thiserror",
-]
-
-[[package]]
-name = "git-walk"
-version = "0.1.0"
-dependencies = [
  "ignore",
+ "rayon",
  "thiserror",
 ]
 

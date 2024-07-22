@@ -1,26 +1,16 @@
-[package]
-name = "git-foreach"
-description = "Run a command in each git repository in a directory"
-version = "0.4.0"
-edition = "2021"
-license-file = "LICENSE"
-homepage = "https://github.com/marcfrederick/git-foreach"
-repository = "https://github.com/marcfrederick/git-foreach"
+[workspace]
+resolver = "2"
+members = ["git-foreach", "git-walk"]
 
+# The profile that 'cargo dist' will build with
 [profile.dist]
 inherits = "release"
 lto = "thin"
 
-[dependencies]
-clap = { version = "4.5.9", features = ["derive", "cargo"] }
-ignore = "0.4.22"
-rayon = "1.10.0"
-thiserror = "1.0.62"
-
 # Config for 'cargo dist'
 [workspace.metadata.dist]
 # The preferred cargo-dist version to use in CI (Cargo.toml SemVer syntax)
-cargo-dist-version = "0.18.0"
+cargo-dist-version = "0.19.1"
 # CI backends to support
 ci = "github"
 # Target platforms to build apps for (Rust target-triple syntax)
@@ -33,6 +23,8 @@ install-updater = false
 installers = ["shell", "powershell", "homebrew"]
 # A GitHub repo to push Homebrew formulas to
 tap = "marcfrederick/homebrew-tap"
+# Path that installers should place binaries in
+install-path = "CARGO_HOME"
 # Publish jobs to run in CI
 publish-jobs = ["homebrew"]
 # Whether to enable GitHub Attestations

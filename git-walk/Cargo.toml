@@ -1,0 +1,12 @@
+[package]
+name = "git-walk"
+description = "Iterate over git repositories in a directory"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+homepage = "https://github.com/marcfrederick/git-foreach"
+repository = "https://github.com/marcfrederick/git-foreach"
+
+[dependencies]
+ignore = "0.4.22"
+thiserror = "1.0.62"
