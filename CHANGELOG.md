@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+## Version 0.4.1 - 2024-07-23
+
+### Added
+
+- Enabled the creation
+  of [GitHub Attestations](https://github.blog/changelog/2024-06-25-artifact-attestations-is-generally-available/) for
+  future release artifacts.
+- The project now supports both MIT and Apache 2.0 licenses. This means, that users can now choose between the two
+  licenses when using the project (previously, only the MIT license was supported).
+- Separated the project into separate crates for the binary and library components.
+- Integrated [cargo-deny](https://www.github.com/EmbarkStudios/cargo-deny) to enforce strict licensing and security
+  policies.
+
 ## Version 0.4.0 - 2024-06-19
 
 ### Added
