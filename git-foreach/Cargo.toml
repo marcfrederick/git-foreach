@@ -10,5 +10,4 @@ repository = "https://github.com/marcfrederick/git-foreach"
 [dependencies]
 clap = { version = "4.5.9", features = ["derive", "cargo"] }
 git-walk = { path = "../git-walk" }
-thiserror = "1.0.63"
 rayon = "1.10.0"
