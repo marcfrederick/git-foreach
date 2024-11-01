@@ -11,3 +11,10 @@ repository = "https://github.com/marcfrederick/git-foreach"
 clap = { version = "4.5.20", features = ["derive", "cargo"] }
 git-walk = { path = "../git-walk" }
 rayon = "1.10.0"
+
+[profile.release]
+lto = true
+strip = true
+opt-level = 3
+codegen-units = 1
+panic = 'abort'
