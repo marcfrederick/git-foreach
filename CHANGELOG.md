@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+## Version 0.4.2 - 2024-11-01
+
+### Changed
+
+- Update the Cargo `release` profile to optimize for size.
+- Various dependency updates.
+- Replace [thiserror](https://docs.rs/thiserror/latest/thiserror/) with manual error handling.
+
 ## Version 0.4.1 - 2024-07-23
 
 ### Added
