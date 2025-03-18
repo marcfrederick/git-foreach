@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+## Version 0.4.2 - 2025-03-18
+
+### Changed
+
+- Updated dependencies to their latest versions.
+- Enabled artifact auditing using [cargo-auditable](https://github.com/rust-secure-code/cargo-auditable).
+- Added generation of CycloneDX Software Bill of Materials (SBOM) for future releases.
+
 ## Version 0.4.2 - 2024-11-01
 
 ### Changed
