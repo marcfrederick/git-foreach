@@ -27,3 +27,6 @@ github-attestations = true
 cargo-auditable = true
 # Whether to use cargo-cyclonedx to generate an SBOM
 cargo-cyclonedx = true
+
+[dist.github-custom-runners]
+global = "ubuntu-22.04"
