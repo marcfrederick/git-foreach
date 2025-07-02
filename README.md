@@ -38,7 +38,7 @@ page also includes instructions for installation using [Homebrew](https://brew.s
 If you're using macOS or Linux, you can install `git-foreach` using [Homebrew](https://brew.sh):
 
 ```shell
-brew install marcfrederick/homebrew-tap/git-foreach
+brew install --cask marcfrederick/homebrew-tap/git-foreach
 ```
 
 ## Building from Source

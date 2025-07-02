@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+## Version 0.4.3 - 2025-07-02
+
+### Changed
+
+- Updated dependencies to their latest versions.
+- Switched from [cargo-dist](https://github.com/axodotdev/cargo-dist) to [GoReleaser](https://goreleaser.com/) for release management, as `cargo-dist` has become unreliable due to funding issues.
+- Replaced the Homebrew formula with a Cask. Users can now install the project using `brew install --cask marcfrederick/tap/git-foreach`. The formula will no longer be available.
+
 ## Version 0.4.2 - 2025-03-18
 
 ### Changed
