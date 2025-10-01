@@ -8,7 +8,7 @@ homepage = "https://github.com/marcfrederick/git-foreach"
 repository = "https://github.com/marcfrederick/git-foreach"
 
 [dependencies]
-clap = { version = "4.5.42", features = ["derive", "cargo"] }
+clap = { version = "4.5.48", features = ["derive", "cargo"] }
 git-walk = { path = "../git-walk" }
 rayon = "1.10.0"
 
