@@ -7,6 +7,11 @@ All notable changes to this project will be documented in this file.
 ### Changed
 
 - Simplified the project from a two-crate workspace into a single binary crate.
+- Prevented repository discovery from traversing `.git` metadata directories.
+
+### Fixed
+
+- Corrected `--hidden` to include hidden directories and `--no-ignore` to disable all standard ignore rules.
 
 ## Version 0.4.5 - 2025-07-02
 

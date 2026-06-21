@@ -2,6 +2,7 @@
 #![deny(clippy::pedantic)]
 
 use std::env;
+use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 
 use clap::Parser;
@@ -56,10 +57,7 @@ fn main() {
 fn repository_foreach<T: Iterator<Item = String>>(args: T) -> Result<(), Error> {
     let options = parse_options(args)?;
 
-    WalkBuilder::new(&options.directory)
-        .hidden(options.hidden)
-        .ignore(!options.no_ignore)
-        .build()
+    repository_walk(&options)
         .par_bridge()
         .try_for_each(|entry| {
             let path = entry?.into_path();
@@ -68,6 +66,14 @@ fn repository_foreach<T: Iterator<Item = String>>(args: T) -> Result<(), Error> 
             }
             Ok(())
         })
+}
+
+fn repository_walk(options: &Options) -> ignore::Walk {
+    WalkBuilder::new(&options.directory)
+        .standard_filters(!options.no_ignore)
+        .hidden(!options.hidden)
+        .filter_entry(|entry| entry.file_name() != OsStr::new(".git"))
+        .build()
 }
 
 /// Parse the command line options.
@@ -120,6 +126,8 @@ fn run_command_in_directory(options: &Options, path: &Path) -> Result<(), Error>
 #[cfg(test)]
 mod test {
     use super::*;
+    use std::fs;
+    use tempfile::tempdir;
 
     macro_rules! parse_options_tests {
         ($($name:ident: $args:expr => $foo:expr,)*) => {
@@ -154,4 +162,54 @@ mod test {
             assert_eq!(options.command, vec!["echo".to_string(), "hello".to_string()]);
         },
     );
+
+    #[test]
+    fn hidden_repositories_are_only_included_when_requested() {
+        let directory = tempdir().expect("failed to create temporary directory");
+        let visible = create_repository(directory.path(), "visible");
+        let hidden = create_repository(directory.path(), ".hidden");
+
+        let repositories: Vec<PathBuf> = discovered_repositories(directory.path(), false, false);
+        assert!(repositories.contains(&visible));
+        assert!(!repositories.contains(&hidden));
+
+        let repositories = discovered_repositories(directory.path(), true, false);
+        assert!(repositories.contains(&visible));
+        assert!(repositories.contains(&hidden));
+    }
+
+    #[test]
+    fn ignored_repositories_are_only_included_when_requested() {
+        let directory = tempdir().expect("failed to create temporary directory");
+        create_repository(directory.path(), "");
+        let ignored = create_repository(directory.path(), "ignored");
+        fs::write(directory.path().join(".gitignore"), "ignored/\n")
+            .expect("failed to create .gitignore");
+
+        assert!(!discovered_repositories(directory.path(), false, false).contains(&ignored));
+        assert!(discovered_repositories(directory.path(), false, true).contains(&ignored));
+    }
+
+    fn create_repository(parent: &Path, name: &str) -> PathBuf {
+        let path = parent.join(name);
+        fs::create_dir_all(path.join(".git")).expect("failed to create test repository");
+        path
+    }
+
+    fn discovered_repositories(directory: &Path, hidden: bool, no_ignore: bool) -> Vec<PathBuf> {
+        let options = Options {
+            quiet: false,
+            directory: directory.to_owned(),
+            hidden,
+            no_ignore,
+            dry_run: true,
+            command: vec!["true".to_owned()],
+        };
+
+        repository_walk(&options)
+            .map(|entry| entry.expect("failed to walk test directory").into_path())
+            .into_iter()
+            .filter(|path| path.is_dir() && path.join(".git").exists())
+            .collect()
+    }
 }
