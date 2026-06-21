@@ -1,8 +1,25 @@
-[workspace]
-resolver = "2"
-members = ["git-foreach", "git-walk"]
+[package]
+name = "git-foreach"
+description = "Run a command in each git repository in a directory"
+version = "0.4.4"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+homepage = "https://github.com/marcfrederick/git-foreach"
+repository = "https://github.com/marcfrederick/git-foreach"
+
+[dependencies]
+clap = { version = "4.6.1", features = ["derive", "cargo"] }
+ignore = "0.4.26"
+rayon = "1.12.0"
 
 # The profile that 'cargo dist' will build with
 [profile.dist]
 inherits = "release"
 lto = "thin"
+
+[profile.release]
+lto = true
+strip = true
+opt-level = 3
+codegen-units = 1
+panic = "abort"

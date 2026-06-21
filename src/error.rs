@@ -4,7 +4,7 @@ use std::path::PathBuf;
 pub enum Error {
     CommandExecutionFailed { path: PathBuf },
     CommandExecutionFailedWithNonZeroExitCode { path: PathBuf, exit_code: i32 },
-    Walk(git_walk::Error),
+    Walk(ignore::Error),
     InvalidUsage(clap::Error),
 }
 
@@ -55,8 +55,8 @@ impl std::error::Error for Error {
     }
 }
 
-impl From<git_walk::Error> for Error {
-    fn from(source: git_walk::Error) -> Self {
+impl From<ignore::Error> for Error {
+    fn from(source: ignore::Error) -> Self {
         Self::Walk(source)
     }
 }

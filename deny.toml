@@ -25,6 +25,6 @@ confidence-threshold = 0.99
 allow = ["Apache-2.0", "MIT"]
 
 [[licenses.exceptions]]
-allow = ["Unicode-DFS-2016"]
+allow = ["Unicode-3.0"]
 crate = "unicode-ident"
 

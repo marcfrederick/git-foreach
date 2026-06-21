@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+### Changed
+
+- Simplified the project from a two-crate workspace into a single binary crate.
+
 ## Version 0.4.5 - 2025-07-02
 
 ### Fixed

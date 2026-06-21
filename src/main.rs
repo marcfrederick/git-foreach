@@ -2,12 +2,11 @@
 #![deny(clippy::pedantic)]
 
 use std::env;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use clap::Parser;
+use ignore::WalkBuilder;
 use rayon::prelude::*;
-
-use git_walk::WalkBuilder;
 
 use crate::error::Error;
 
@@ -56,18 +55,19 @@ fn main() {
 /// subdirectories.
 fn repository_foreach<T: Iterator<Item = String>>(args: T) -> Result<(), Error> {
     let options = parse_options(args)?;
-    if cfg!(debug_assertions) {
-        dbg!(&options);
-    }
 
     WalkBuilder::new(&options.directory)
         .hidden(options.hidden)
         .ignore(!options.no_ignore)
         .build()
         .par_bridge()
-        .flatten()
-        .filter(|path| path.is_dir() && path.join(".git").exists())
-        .try_for_each(|path| run_command_in_directory(&options, &path))
+        .try_for_each(|entry| {
+            let path = entry?.into_path();
+            if path.is_dir() && path.join(".git").exists() {
+                run_command_in_directory(&options, &path)?;
+            }
+            Ok(())
+        })
 }
 
 /// Parse the command line options.
@@ -76,7 +76,7 @@ fn parse_options<T: Iterator<Item = String>>(args: T) -> Result<Options, Error> 
 }
 
 /// Run a command in a directory.
-fn run_command_in_directory(options: &Options, path: &PathBuf) -> Result<(), Error> {
+fn run_command_in_directory(options: &Options, path: &Path) -> Result<(), Error> {
     if !options.quiet {
         println!("Entering '{}'", path.display());
     }
@@ -108,10 +108,12 @@ fn run_command_in_directory(options: &Options, path: &PathBuf) -> Result<(), Err
     match status {
         Ok(exit_status) if exit_status.success() => Ok(()),
         Ok(exit_status) => Err(Error::CommandExecutionFailedWithNonZeroExitCode {
-            path: path.clone(),
+            path: path.to_path_buf(),
             exit_code: exit_status.code().unwrap_or(1),
         }),
-        Err(_) => Err(Error::CommandExecutionFailed { path: path.clone() }),
+        Err(_) => Err(Error::CommandExecutionFailed {
+            path: path.to_path_buf(),
+        }),
     }
 }
 
