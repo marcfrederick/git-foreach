@@ -1,9 +1,9 @@
 #![forbid(unsafe_code)]
 #![deny(clippy::pedantic)]
 
-use std::env;
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
+use std::process::ExitCode;
 
 use clap::Parser;
 use ignore::WalkBuilder;
@@ -48,24 +48,46 @@ struct Options {
     command: Vec<String>,
 }
 
-fn main() {
-    repository_foreach(env::args()).unwrap_or_else(|err| err.print_and_exit());
+fn main() -> ExitCode {
+    let options = Options::parse();
+
+    match repository_foreach(&options) {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(errors) => {
+            eprintln!("encountered {} error(s):", errors.len());
+            for error in errors {
+                eprintln!("- {error}");
+            }
+            ExitCode::FAILURE
+        }
+    }
 }
 
-/// Run a command in each git repository in the current directory and its
+/// Run a command in each git repository in the given directory and its
 /// subdirectories.
-fn repository_foreach<T: Iterator<Item = String>>(args: T) -> Result<(), Error> {
-    let options = parse_options(args)?;
-
-    repository_walk(&options)
+fn repository_foreach(options: &Options) -> Result<(), Vec<Error>> {
+    let mut errors: Vec<_> = repository_walk(options)
         .par_bridge()
-        .try_for_each(|entry| {
-            let path = entry?.into_path();
+        .filter_map(|entry| {
+            let path = match entry {
+                Ok(entry) => entry.into_path(),
+                Err(source) => return Some(Error::from(source)),
+            };
+
             if path.is_dir() && path.join(".git").exists() {
-                run_command_in_directory(&options, &path)?;
+                run_command_in_directory(options, &path).err()
+            } else {
+                None
             }
-            Ok(())
         })
+        .collect();
+
+    errors.sort_by_key(ToString::to_string);
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        Err(errors)
+    }
 }
 
 fn repository_walk(options: &Options) -> ignore::Walk {
@@ -74,11 +96,6 @@ fn repository_walk(options: &Options) -> ignore::Walk {
         .hidden(!options.hidden)
         .filter_entry(|entry| entry.file_name() != OsStr::new(".git"))
         .build()
-}
-
-/// Parse the command line options.
-fn parse_options<T: Iterator<Item = String>>(args: T) -> Result<Options, Error> {
-    Options::try_parse_from(args).map_err(Error::from)
 }
 
 /// Run a command in a directory.
@@ -109,59 +126,59 @@ fn run_command_in_directory(options: &Options, path: &Path) -> Result<(), Error>
     let status = std::process::Command::new(shell_binary)
         .args([shell_arg, &shell_command])
         .current_dir(path)
-        .status();
+        .status()
+        .map_err(|source| Error::CommandExecutionFailed {
+            path: path.to_path_buf(),
+            source,
+        })?;
 
-    match status {
-        Ok(exit_status) if exit_status.success() => Ok(()),
-        Ok(exit_status) => Err(Error::CommandExecutionFailedWithNonZeroExitCode {
+    if status.success() {
+        Ok(())
+    } else {
+        Err(Error::CommandExitedUnsuccessfully {
             path: path.to_path_buf(),
-            exit_code: exit_status.code().unwrap_or(1),
-        }),
-        Err(_) => Err(Error::CommandExecutionFailed {
-            path: path.to_path_buf(),
-        }),
+            status,
+        })
     }
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
+    use clap::error::ErrorKind;
     use std::fs;
     use tempfile::tempdir;
 
-    macro_rules! parse_options_tests {
-        ($($name:ident: $args:expr => $foo:expr,)*) => {
+    macro_rules! parse_error_tests {
+        ($($name:ident: $args:expr => $kind:expr,)*) => {
         $(
             #[test]
             fn $name() {
                 let args = $args.iter().map(ToString::to_string);
-                let result = parse_options(args);
-                $foo(result);
+                let error = Options::try_parse_from(args).expect_err("expected parsing to fail");
+                assert_eq!(error.kind(), $kind);
             }
         )*
         }
     }
 
-    parse_options_tests!(
-        parse_options_empty: [] as [&str; 0] => |result: Result<_, _>| assert!(matches!(result, Err(Error::InvalidUsage { .. }))),
-        parse_options_help: ["git-foreach", "--help"] => |result: Result<_, _>| assert!(matches!(result, Err(Error::InvalidUsage { .. }))),
-        parse_options_version: ["git-foreach", "--version"] => |result: Result<_, _>| assert!(matches!(result, Err(Error::InvalidUsage { .. }))),
-        parse_options_invalid: ["git-foreach", "--invalid"] => |result: Result<_, _>| assert!(matches!(result, Err(Error::InvalidUsage { .. }))),
-        parse_options_valid: ["git-foreach", "echo", "hello"] => |result: Result<Options, _>| {
-            let options = result.expect("Expected Ok(_)");
-            assert_eq!(options.command, vec!["echo".to_string(), "hello".to_string()]);
-        },
-        parse_options_dry_run: ["git-foreach", "--dry-run", "echo", "hello"] => |result: Result<Options, _>| {
-            let options = result.expect("Expected Ok(_)");
-            assert!(options.dry_run);
-            assert_eq!(options.command, vec!["echo".to_string(), "hello".to_string()]);
-        },
-        parse_options_quiet: ["git-foreach", "--quiet", "echo", "hello"] => |result: Result<Options, _>| {
-            let options = result.expect("Expected Ok(_)");
-            assert!(options.quiet);
-            assert_eq!(options.command, vec!["echo".to_string(), "hello".to_string()]);
-        },
+    parse_error_tests!(
+        parse_options_empty: [] as [&str; 0] => ErrorKind::MissingRequiredArgument,
+        parse_options_help: ["git-foreach", "--help"] => ErrorKind::DisplayHelp,
+        parse_options_version: ["git-foreach", "--version"] => ErrorKind::DisplayVersion,
+        parse_options_invalid: ["git-foreach", "--invalid"] => ErrorKind::UnknownArgument,
     );
+
+    #[test]
+    fn parse_options() {
+        let options =
+            Options::try_parse_from(["git-foreach", "--dry-run", "--quiet", "echo", "hello"])
+                .expect("expected parsing to succeed");
+
+        assert!(options.dry_run);
+        assert!(options.quiet);
+        assert_eq!(options.command, ["echo", "hello"]);
+    }
 
     #[test]
     fn hidden_repositories_are_only_included_when_requested() {
@@ -208,7 +225,6 @@ mod test {
 
         repository_walk(&options)
             .map(|entry| entry.expect("failed to walk test directory").into_path())
-            .into_iter()
             .filter(|path| path.is_dir() && path.join(".git").exists())
             .collect()
     }

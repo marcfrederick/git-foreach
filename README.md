@@ -19,12 +19,16 @@ For instance, if you want to execute git pull in each repository, you would use:
 git-foreach "git pull"
 ```
 
-By default, git-foreach will stop executing if the command fails in one of the repositories. If you want the execution
-to continue despite failures, you can append `|| :` to the command. This will mask the error and allows git-foreach to
-continue processing the remaining repositories.
+Commands run in parallel in every discovered repository. A failure in one repository does not stop commands that run
+in the others. After all commands finish, failures are reported and `git-foreach` exits unsuccessfully. To mask failures,
+you can append `|| :` to the command.
 
 ```shell
-git-foreach "git pull || :"
+$ git-foreach "git pull"
+encountered 1 error(s):
+- command exited unsuccessfully in ./example-repository: exit status: 1
+
+$ git-foreach "git pull || :"
 ```
 
 ## Installation

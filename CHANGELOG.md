@@ -8,10 +8,12 @@ All notable changes to this project will be documented in this file.
 
 - Simplified the project from a two-crate workspace into a single binary crate.
 - Prevented repository discovery from traversing `.git` metadata directories.
+- Reported all parallel command failures in a summary.
 
 ### Fixed
 
 - Corrected `--hidden` to include hidden directories and `--no-ignore` to disable all standard ignore rules.
+- Preserved process startup errors and let clap handle help, version, and usage output.
 
 ## Version 0.4.5 - 2025-07-02
 
