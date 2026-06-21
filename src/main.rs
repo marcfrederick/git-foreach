@@ -66,19 +66,15 @@ fn main() -> ExitCode {
 /// Run a command in each git repository in the given directory and its
 /// subdirectories.
 fn repository_foreach(options: &Options) -> Result<(), Vec<Error>> {
-    let mut errors: Vec<_> = repository_walk(options)
+    let mut errors: Vec<_> = discover_repositories(options)
         .par_bridge()
-        .filter_map(|entry| {
-            let path = match entry {
-                Ok(entry) => entry.into_path(),
+        .filter_map(|repository| {
+            let path = match repository {
+                Ok(path) => path,
                 Err(source) => return Some(Error::from(source)),
             };
 
-            if path.is_dir() && path.join(".git").exists() {
-                run_command_in_directory(options, &path).err()
-            } else {
-                None
-            }
+            run_command_in_directory(options, &path).err()
         })
         .collect();
 
@@ -90,12 +86,26 @@ fn repository_foreach(options: &Options) -> Result<(), Vec<Error>> {
     }
 }
 
-fn repository_walk(options: &Options) -> ignore::Walk {
+fn discover_repositories(
+    options: &Options,
+) -> impl Iterator<Item = Result<PathBuf, ignore::Error>> {
     WalkBuilder::new(&options.directory)
         .standard_filters(!options.no_ignore)
         .hidden(!options.hidden)
-        .filter_entry(|entry| entry.file_name() != OsStr::new(".git"))
+        .filter_entry(is_not_git_dir)
         .build()
+        .filter_map(|entry| match entry {
+            Ok(entry) => is_repository(&entry).then(|| Ok(entry.into_path())),
+            Err(source) => Some(Err(source)),
+        })
+}
+
+fn is_not_git_dir(entry: &ignore::DirEntry) -> bool {
+    entry.file_name() != OsStr::new(".git")
+}
+
+fn is_repository(entry: &ignore::DirEntry) -> bool {
+    entry.file_type().is_some_and(|ft| ft.is_dir()) && entry.path().join(".git").is_dir()
 }
 
 /// Run a command in a directory.
@@ -186,11 +196,11 @@ mod test {
         let visible = create_repository(directory.path(), "visible");
         let hidden = create_repository(directory.path(), ".hidden");
 
-        let repositories: Vec<PathBuf> = discovered_repositories(directory.path(), false, false);
+        let repositories: Vec<PathBuf> = repository_paths(directory.path(), false, false);
         assert!(repositories.contains(&visible));
         assert!(!repositories.contains(&hidden));
 
-        let repositories = discovered_repositories(directory.path(), true, false);
+        let repositories = repository_paths(directory.path(), true, false);
         assert!(repositories.contains(&visible));
         assert!(repositories.contains(&hidden));
     }
@@ -203,8 +213,8 @@ mod test {
         fs::write(directory.path().join(".gitignore"), "ignored/\n")
             .expect("failed to create .gitignore");
 
-        assert!(!discovered_repositories(directory.path(), false, false).contains(&ignored));
-        assert!(discovered_repositories(directory.path(), false, true).contains(&ignored));
+        assert!(!repository_paths(directory.path(), false, false).contains(&ignored));
+        assert!(repository_paths(directory.path(), false, true).contains(&ignored));
     }
 
     fn create_repository(parent: &Path, name: &str) -> PathBuf {
@@ -213,7 +223,7 @@ mod test {
         path
     }
 
-    fn discovered_repositories(directory: &Path, hidden: bool, no_ignore: bool) -> Vec<PathBuf> {
+    fn repository_paths(directory: &Path, hidden: bool, no_ignore: bool) -> Vec<PathBuf> {
         let options = Options {
             quiet: false,
             directory: directory.to_owned(),
@@ -223,9 +233,8 @@ mod test {
             command: vec!["true".to_owned()],
         };
 
-        repository_walk(&options)
-            .map(|entry| entry.expect("failed to walk test directory").into_path())
-            .filter(|path| path.is_dir() && path.join(".git").exists())
+        discover_repositories(&options)
+            .map(|repository| repository.expect("failed to walk test directory"))
             .collect()
     }
 }
