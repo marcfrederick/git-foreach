@@ -4,7 +4,21 @@ updates:
     directory: "/"
     schedule:
       interval: monthly
+    groups:
+      cargo-dependencies:
+        patterns:
+          - "*"
+    cooldown:
+      default-days: 14
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
       interval: monthly
+    groups:
+      actions-dependencies:
+        patterns:
+          - "*"
+    exclude-paths:
+      - ".github/workflows/release.yml" # managed by cargo-dist
+    cooldown:
+      default-days: 14
