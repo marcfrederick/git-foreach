@@ -4,38 +4,59 @@ on:
   push:
   pull_request:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
+env:
+  MISE_VERSION: "2026.6.14"
+
 jobs:
-  test:
+  ci:
+    name: ${{ matrix.task }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        task: [fmt, clippy, test, deny]
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v4
-      - name: Build and test
-        run: cargo build --verbose
-      - name: Run tests
-        run: cargo test --verbose
+        with:
+          fetch-depth: 1
+          persist-credentials: false
 
-  clippy:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v4
-      - name: Clippy
-        run: cargo clippy --verbose
+      - name: Cache Rust toolchain
+        id: cache_rust_toolchain
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.rustup/toolchains/
+          key: rust-toolchain-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/mise.toml', '**/mise.lock' ,'**/mise.*.toml' ,'**/mise.*.lock') }}
 
-  fmt:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v4
-      - name: Check formatting
-        run: cargo fmt --all --check
+      - name: Install mise
+        id: install_mise
+        uses: jdx/mise-action@e6a8b3978addb5a52f2b4cd9d91eafa7f0ab959d # v4.2.0
+        with:
+          version: "${{ env.MISE_VERSION }}"
 
-  cargo-deny:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v4
-      - uses: EmbarkStudios/cargo-deny-action@bb137d7af7e4fb67e5f82a49c4fce4fad40782fe # v2
+      # If `mise` cache was restored, but the actions cache for cargo binaries was busted (or missing),
+      # then force reinstall of the Rust toolchains, so that the subsequent Rust actions do not fail.
+      # The downloaded binaries will also be persisted in the actions cache at the end of the workflow.
+      #
+      # See https://github.com/jdx/mise-action/issues/215#issuecomment-4753881336
+      - name: Force reinstall Rust toolchain
+        if: ${{ steps.install_mise.outputs.cache-hit == 'true' && steps.cache_rust_toolchain.outputs.cache-hit != 'true' }}
+        shell: bash
+        run: |
+          mise install --force rust
+
+      - name: Run ${{ matrix.task }}
+        run: mise run "$MATRIX_TASK"
+        env:
+          MATRIX_TASK: "${{ matrix.task }}"

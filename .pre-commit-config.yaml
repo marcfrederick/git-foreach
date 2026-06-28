@@ -5,24 +5,26 @@ repos:
         name: fmt
         language: system
         files: '\.rs$'
-        entry: cargo fmt -- --check
+        entry: mise run fmt
+        pass_filenames: false
       - id: clippy
         name: clippy
         language: system
         files: '\.rs$'
-        entry: cargo clippy --all-targets --all -- -D warnings
+        entry: mise run clippy
         pass_filenames: false
       - id: test
         name: test
         language: system
         files: '\.rs$'
-        entry: cargo test
+        entry: mise run test
         pass_filenames: false
-  - repo: https://github.com/EmbarkStudios/cargo-deny
-    rev: 0.14.24
-    hooks:
-      - id: cargo-deny
-        args: ["--all-features", "check"]
+      - id: deny
+        name: deny
+        language: system
+        files: '^(Cargo\.lock|Cargo\.toml|deny\.toml|mise\.toml)$'
+        entry: mise run deny
+        pass_filenames: false
   - repo: https://github.com/gitleaks/gitleaks
     rev: v8.18.4
     hooks:
